@@ -3,11 +3,11 @@ var request = require("request");
 const axios = require('axios');
 const jsdom = require("jsdom");
 const pLimit = require('p-limit');
- 
+const fs = require('fs');
 const limit = pLimit(3);
 const { JSDOM } = jsdom;
 listlink = ['https://www.theiconic.com.au/tommy-hilfiger/','https://www.theiconic.com.au/adidas-performance/'];
-
+//listlink=['https://www.theiconic.com.au/womens-shoes-dress-shoes/','https://www.theiconic.com.au/womens-shoes-dress-shoes/?&sort=popularity&category=70'];
 
 
 
@@ -55,16 +55,34 @@ listlink = ['https://www.theiconic.com.au/tommy-hilfiger/','https://www.theiconi
 // console.log('Asynchronous request made.');
 
 //tinhsotrang.then(function(data){console.log(data)});
+function genurl(e){
+    e2 = [e.link];
+    for (let i = 1; i < e.numberpage; i++) { e2[i] = e.link + "?page="+(i+1) }
+    return e2;
+}
 function geturlproduct(e){
-    return axios.get(e).then(response=>{
-                let urlproduct =[];
-                const getproduct = (new JSDOM(response.data)).window; 
-                getlink = getproduct.document.querySelectorAll("#catalog-images-wrapper > div > div > figure > a:nth-child(1)");
-                Array.from(getlink).map(result=>{urlproduct.push("https://www.theiconic.com.au"+result.href)});
-                //console.log(urlproduct)
-                return urlproduct;
-                //for(let i =0;i<getlink.length;i++){dem++; urlproduct.push({"STT":dem,"url":"https://www.theiconic.com.au"+getlink[i].href})}
-            })
+    e2 = genurl(e);
+    // return axios.get(e.link).then(response=>{
+    //             let urlproduct =[];
+    //             const getproduct = (new JSDOM(response.data)).window; 
+    //             getlink = getproduct.document.querySelectorAll("#catalog-images-wrapper > div > div > figure > a:nth-child(1)");
+    //             Array.from(getlink).map(result=>{urlproduct.push("https://www.theiconic.com.au"+result.href)});
+    //             //console.log(urlproduct)
+    //             return urlproduct;
+    //             //for(let i =0;i<getlink.length;i++){dem++; urlproduct.push({"STT":dem,"url":"https://www.theiconic.com.au"+getlink[i].href})}
+    //         })
+    const urlproduct =[];
+    return Promise.all(e2.map(result => axios.get(result)))
+    .then(function(data){
+        data.forEach(element=>{
+            const getproduct = (new JSDOM(element.data)).window;  
+            getlink = getproduct.document.querySelectorAll("#catalog-images-wrapper > div > div > figure > a:nth-child(1)");
+            //console.log(urlproduct);
+            Array.from(getlink).map(result=>{urlproduct.push("https://www.theiconic.com.au"+result.href)});
+        })
+        return urlproduct;
+    })
+        
 }
 Promise.all(listlink.map(result => axios.get(result)))
     .then(function(data){
@@ -87,6 +105,16 @@ Promise.all(listlink.map(result => axios.get(result)))
         var uproduct=[]
         var dem = 0;
         console.log(data)
-        return Promise.all(data.map(element=>geturlproduct(element.link))).then(res=>{return uproduct=res})
+        return Promise.all(data.map(element=>geturlproduct(element))).then(res=>{return uproduct=res})
     })
-    .then((data)=>{console.log(data)});  
+    .then((data)=>{
+        e=[]
+        for(i=0;i<data.length;i++){
+        e = e.concat(data[i]);
+    }
+    return e;
+    })
+    .then((data)=>{ e = data.join('\n');console.log(e);fs.writeFile('mynewfile3.txt', e, function (err) {
+        if (err) throw err;
+        console.log('Replaced!');
+      });});  
