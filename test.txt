@@ -1,0 +1,1 @@
+Type,SKU,Name,Published,Is featured?,Visibility in catalog,Description,In stock?,Sale price,Regular price,Allow customer reviews?,Categories,Tags,Images,Parent,Attribute 1 name,Attribute 1 value(s),Brand,Gender,Sub Category
